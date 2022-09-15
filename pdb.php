@@ -42,13 +42,13 @@ print("<h2>AlphaFold entry ".$name."</h2>\n");
 print(getAF2Link($name,"View $name on AlphaFold Protein Structure Database site<br>\n"));
 print("<b>Description</b>: $description<br>\n");
 print("<b>Global pLDDT</b>: ".(is_null($global_metric_value) ? "N/A" : $global_metric_value)."<br>\n");
-$result = mysqli_query($mysqlLink, "select seq2_id, blast_log10_e, pct_identical, seq1_start, seq1_length, seq2_start, seq2_length from uniprot_seq, astral_seq_blast where 35522767 = uniprot_seq.uniprot_id and uniprot_seq.seq_id = astral_seq_blast.seq1_id group by seq2_id order by blast_log10_e;");
+$result = mysqli_query($mysqlLink, "select astral_domain.header, blast_log10_e, pct_identical, seq1_start, seq1_length, seq2_start, seq2_length from uniprot_seq, astral_seq_blast, astral_domain where 35522767 = uniprot_seq.uniprot_id and uniprot_seq.seq_id = astral_seq_blast.seq1_id and seq2_id = astral_domain.seq_id group by seq2_id order by blast_log10_e;");
 $n = mysqli_num_rows($result);
 $resdata="[";
 $seq_ids="[";
 for ($x = 0; $x < $n; $x++) {
 	$row = mysqli_fetch_assoc($result);
-	$seq_ids = $seq_ids.$row["seq2_id"].", ";
+	$seq_ids = $seq_ids.$row["astral_domain.header"].", ";
 	$seq1_end = $row["seq1_start"] + $row["seq1_length"];
 	$resdata = $resdata."[".$row["seq1_start"].", ".$seq1_end."], ";
 } 
