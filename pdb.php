@@ -46,7 +46,8 @@ $query = "select astral_domain.header, astral_domain.sid, blast_log10_e, pct_ide
 /* print($query); */
 $result = mysqli_query($mysqlLink, $query);
 $n = mysqli_num_rows($result);
-$resdata=[];
+$query_res=[];
+$hit_res=[];
 $seq_ids=[];
 $e_values=[];
 $colors=[];
@@ -61,7 +62,9 @@ for ($x = 0; $x < $n; $x++) {
 		$colors[]= "blue";
 	}
 	$seq1_end = $row["seq1_start"] + $row["seq1_length"];
-	$resdata[] = [intval($row["seq1_start"]), $seq1_end];
+	$query_res[] = [intval($row["seq1_start"]), $seq1_end];
+	$seq2_end = $row["seq2_start"] + $row["seq2_length"];
+	$hit_res[] = [intval($row["seq2_start"]), $seq2_end];
 } 
 /* print(json_encode($resdata)); */
 /* print(json_encode($seq_ids)); */
@@ -80,13 +83,19 @@ print("</div>\n");
 
 <script>
 
+  const queryRes = <?php print(json_encode($query_res)) ?>;
+  const hit_res = <?php print(json_encode($hit_res)) ?>;
+  const seq_ids = <?php print(json_encode($seq_ids)) ?>;
+  const colors = <?php print(json_encode($colors)) ?>;
+  const e_values = <?php print(json_encode($e_values)) ?>;
+
   const data = {
-  labels: <?php print(json_encode($seq_ids))?>,
+  labels: seq_ids,
     datasets: [{
       label: 'Hits',
-      backgroundColor: <?php print(json_encode($colors))?>, 
+      backgroundColor: colors, 
       borderColor: 'rgb(255, 99, 132)',
-      data: <?php print(json_encode($resdata))?>
+      data: queryRes
     }]
   };
 
@@ -106,13 +115,17 @@ print("</div>\n");
       /* } */
     }
   };
-</script>
 
-<script>
-  const myChart = new Chart(
-    document.getElementById('myChart'),
-    config
-  );
+  const canvas = document.getElementById('myChart');
+
+  const myChart = new Chart(canvas, config);
+
+  canvas.onclick = function(evt) {
+    const hit_view = document.getElementById('Hit');
+    let activePoints = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+    let idx = activePoints[0]['index'];
+    hit_view.innerHTML = '<div> Hit: ' + seq_ids[idx] + '</div> <div> Query start: ' +  queryRes[idx][0]  + '</div> <div> Query end: ' + queryRes[idx][1] + '</div> <div> Hit start: ' + hit_res[idx][0] + '</div> <div> Hit end: ' + hit_res[idx][1] + '</div> <div> log10 E-value: ' + e_values[idx] + '</div>';
+  }
 </script>
 
 <?php
