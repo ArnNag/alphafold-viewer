@@ -46,29 +46,27 @@ $query = "select astral_domain.header, astral_domain.sid, blast_log10_e, pct_ide
 /* print($query); */
 $result = mysqli_query($mysqlLink, $query);
 $n = mysqli_num_rows($result);
-$resdata="[";
-$seq_ids="[";
-$e_values="[";
-$colors="[";
+$resdata=[];
+$seq_ids=[];
+$e_values=[];
+$colors=[];
 $e_value_cutoff = -3;
 for ($x = 0; $x < $n; $x++) {
 	$row = mysqli_fetch_assoc($result);
-	$seq_ids = $seq_ids.'"'.$row["sid"].'", ';
-	$e_values = $e_values.$row["blast_log10_e"].', ';
+	$seq_ids[] = $row['sid'];
+	$e_values[] = floatval($row["blast_log10_e"]);
 	if ($row["blast_log10_e"] < $e_value_cutoff) {
-		$color = '"green"';
+		$colors[] = "green";
 	} else {
-		$color = '"blue"';
+		$colors[]= "blue";
 	}
-	$colors = $colors.$color.', ';
 	$seq1_end = $row["seq1_start"] + $row["seq1_length"];
-	$resdata = $resdata."[".$row["seq1_start"].", ".$seq1_end."], ";
+	$resdata[] = [intval($row["seq1_start"]), $seq1_end];
 } 
-$resdata = substr($resdata, 0, -2)."]";
-$seq_ids = substr($seq_ids, 0, -2)."]";
-$e_values = substr($e_values, 0, -2)."]";
-$colors = substr($colors, 0, -2)."]";
-print($colors);
+/* print(json_encode($resdata)); */
+/* print(json_encode($seq_ids)); */
+/* print(json_encode($e_values)); */
+/* print(json_encode($colors)); */
 print("</div>\n");
 ?>
 
@@ -76,17 +74,19 @@ print("</div>\n");
   <canvas id="myChart"></canvas>
 </div>
 
+<div id="Hit"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 
   const data = {
-  labels: <?php print($seq_ids)?>,
+  labels: <?php print(json_encode($seq_ids))?>,
     datasets: [{
       label: 'Hits',
-      backgroundColor: <?php print($colors)?>, 
+      backgroundColor: <?php print(json_encode($colors))?>, 
       borderColor: 'rgb(255, 99, 132)',
-      data: <?php print($resdata)?>
+      data: <?php print(json_encode($resdata))?>
     }]
   };
 
