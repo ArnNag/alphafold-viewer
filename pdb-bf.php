@@ -42,33 +42,20 @@ print("<h2>AlphaFold entry ".$name."</h2>\n");
 print(getAF2Link($name,"View $name on AlphaFold Protein Structure Database site<br>\n"));
 print("<b>Description</b>: $description<br>\n");
 print("<b>Global pLDDT</b>: ".(is_null($global_metric_value) ? "N/A" : $global_metric_value)."<br>\n");
-$query = "select astral_domain.header, astral_domain.sid, blast_log10_e, pct_identical, seq1_start, seq1_length, seq2_start, seq2_length from model_structure, model_structure_uniprot, uniprot_seq, astral_seq_blast, astral_domain where model_structure.cif_path = \"".$path."\" and model_structure.id = model_structure_uniprot.model_structure_id and model_structure_uniprot.uniprot_id = uniprot_seq.uniprot_id and uniprot_seq.seq_id = astral_seq_blast.seq1_id and seq2_id = astral_domain.seq_id and (astral_domain.style_id = 1 or astral_domain.style_id = 3) group by seq2_id order by blast_log10_e;";
+$query = "SELECT model_structure.cif_path, seq2_id, blast_log10_e, pct_identical, seq1_start, seq1_length, seq2_start, seq2_length from model_structure, model_structure_uniprot, uniprot_seq, astral_seq_blast where model_structure.id = model_structure_uniprot.model_structure_id and model_structure_uniprot.uniprot_id = uniprot_seq.uniprot_id and uniprot_seq.seq_id = astral_seq_blast.seq1_id group by model_structure.id;";
 /* print($query); */
 $result = mysqli_query($mysqlLink, $query);
 $n = mysqli_num_rows($result);
 $resdata="[";
 $seq_ids="[";
-$e_values="[";
-$colors="[";
-$e_value_cutoff = -3;
 for ($x = 0; $x < $n; $x++) {
 	$row = mysqli_fetch_assoc($result);
 	$seq_ids = $seq_ids.'"'.$row["sid"].'", ';
-	$e_values = $e_values.$row["blast_log10_e"].', ';
-	if ($row["blast_log10_e"] < $e_value_cutoff) {
-		$color = '"green"';
-	} else {
-		$color = '"blue"';
-	}
-	$colors = $colors.$color.', ';
 	$seq1_end = $row["seq1_start"] + $row["seq1_length"];
 	$resdata = $resdata."[".$row["seq1_start"].", ".$seq1_end."], ";
 } 
 $resdata = substr($resdata, 0, -2)."]";
 $seq_ids = substr($seq_ids, 0, -2)."]";
-$e_values = substr($e_values, 0, -2)."]";
-$colors = substr($colors, 0, -2)."]";
-print($colors);
 print("</div>\n");
 ?>
 
@@ -84,7 +71,7 @@ print("</div>\n");
   labels: <?php print($seq_ids)?>,
     datasets: [{
       label: 'Hits',
-      backgroundColor: <?php print($colors)?>, 
+      backgroundColor: 'rgb(255, 99, 132)',
       borderColor: 'rgb(255, 99, 132)',
       data: <?php print($resdata)?>
     }]
