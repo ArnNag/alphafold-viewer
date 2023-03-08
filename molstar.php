@@ -93,7 +93,7 @@ require_once ("../common.php");
 <div id="app"></div>
         <script type="text/javascript">
             molstar.Viewer.create('app', {
-                layoutIsExpanded: true,
+                layoutIsExpanded: false,
                 layoutShowControls: false,
                 layoutShowRemoteState: false,
                 layoutShowSequence: true,
@@ -106,20 +106,8 @@ require_once ("../common.php");
 
                 pdbProvider: 'rcsb',
                 emdbProvider: 'rcsb',
-            }).then(viewer => {
-                viewer.loadPdb('7bv2');
-                viewer.loadEmdb('EMD-30210', { detail: 6 });
-                // viewer.loadAllModelsOrAssemblyFromUrl('https://cs.litemol.org/5ire/full', 'mmcif', false, { representationParams: { theme: { globalName: 'operator-name' } } })
-                // viewer.loadStructureFromUrl('my url', 'pdb', false, {
-                //     representationParams: {
-                //         theme: {
-                //             globalName: 'uniform',
-                //             globalColorParams: { value: 0xff0000 }
-                //         }
-                //     },
-                //     label: 'my structure'
-                // });
-            });
+            }).then(viewer => 
+		buildStaticSuperposition(viewer.plugin, StaticSuperpositionTestData));
         </script>
 <?php 
 	    $af2_data = "{".substr(shell_exec($awk_input), 0, -2)."}";

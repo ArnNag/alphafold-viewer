@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@rcsb/rcsb-molstar": "^2.5.8",
+    "@rcsb/rcsb-molstar": "^2.5.11",
     "molstar": "^3.23.0"
   }
 }
