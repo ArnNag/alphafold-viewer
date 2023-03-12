@@ -287,7 +287,7 @@ ORDER BY p_value;";
 		    afterBody: function(tooltipItem) {
 		      let idx = tooltipItem[0]['dataIndex'];
 		      msg = 'Query start: ' +  queryRes[idx][0]  + '\nQuery end: ' + queryRes[idx][1] +  '\nHit start: ' + hit_res[idx][0] + '\nHit end: ' + hit_res[idx][1] + '\n';
-		      msg += "Log10 E_value: " + Math.round(structPValues[tooltipItem[0]['dataIndex']] * 100) / 100;
+		      msg += "Log10 E_value: " + Math.round(structPVals[tooltipItem[0]['dataIndex']] * 100) / 100;
 		      return msg;
 		    }
 		  }
