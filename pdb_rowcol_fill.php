@@ -22,19 +22,19 @@ function getAF2Link($name, $text=FALSE) {
 	<script type="text/javascript" src="rcsb_molstar/rcsb-molstar/build/dist/viewer/rcsb-molstar.js"></script>
 	<link rel="stylesheet" type="text/css" href="rcsb-molstar/build/dist/viewer/rcsb-molstar.css" />
 	<style>
-		.chartWrapper {
-		  position: relative;
-		}
+		/* .chartWrapper { */
+		/*   position: relative; */
+		/* } */
 
-		.chartWrapper > canvas {
-		  position: absolute;
-		  left: 0;
-		  top: 0;
-		  pointer-events: none;
-		}
+		/* .chartWrapper > canvas { */
+		/*   position: absolute; */
+		/*   left: 0; */
+		/*   top: 0; */
+		/*   pointer-events: none; */
+		/* } */
 
 		.chartAreaWrapper {
-		  height: 200px;
+		  height: 25vh;
 		    overflow-y: scroll;
 		}
 
@@ -231,17 +231,17 @@ ORDER BY p_value;";
 	    superposeDomain(0);
 		</script>
 
-	<div class="structure-hits-wrapper">
+	<div class="structure-hits">
 		<div class="chartAreaWrapper">
-			<div class="chartAreaWrapper2">
+			<div>
 				<canvas id="struct-hits" style="height: <?php print(100 + $structure_n * $pxperhit)?>px"></canvas>
 			</div>
 		</div>
 	</div>
 
-	<div class="sequence-hits-wrapper">
+	<div class="sequence-hits">
 		<div class="chartAreaWrapper">
-			<div class="chartAreaWrapper2">
+			<div>
 				<canvas id="seq-hits" style="height: <?php print(100 + $n * $pxperhit)?>px"></canvas>
 			</div>
 		</div>
