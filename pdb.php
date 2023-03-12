@@ -223,13 +223,13 @@ ORDER BY p_value;";
 		</div>
 	</div>
 
-	<!-- <div class="sequence-hits-wrapper"> -->
+	<div class="sequence-hits-wrapper">
 		<div class="chartAreaWrapper">
 			<div class="chartAreaWrapper2">
 				<canvas id="seq-hits" style="height: <?php print(100 + $n * $pxperhit)?>px"></canvas>
 			</div>
 		</div>
-	<!-- </div> -->
+	</div>
 
 
 	<script>

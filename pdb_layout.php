@@ -47,7 +47,7 @@ function getAF2Link($name, $text=FALSE) {
 		  display: grid;
 		  grid-template-areas:
 		    'model-info model-info model-info model-info'
-		    'viewer viewer hit-info hit-info'
+		    'viewer viewer viewer hit-info'
 		    'structure-hits structure-hits structure-hits structure-hits'
 		    'sequence-hits sequence-hits sequence-hits sequence-hits';
 		  gap: 10px;
@@ -98,7 +98,7 @@ function getAF2Link($name, $text=FALSE) {
 
 	<div class="viewer-wrapper" style="position: relative; background-color: yellow">
 		hi			
-	    <div id="sviewer" style="width: 600px; height: 400px"></div>
+	    <div id="sviewer" style="height: 400px"></div>
 	</div>
 
 	<div class="hit-info" style="background-color: #90EE90">
