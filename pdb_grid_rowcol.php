@@ -37,19 +37,32 @@ function getAF2Link($name, $text=FALSE) {
 		    overflow-y: scroll;
 		}
 
-		.model-info { grid-area: model-info; }
-		.viewer-wrapper { grid-area: viewer; }
-		.hit-info { grid-area: hit-info; }
-		.structure-hits { grid-area: structure-hits; }
-		.sequence-hits { grid-area: sequence-hits; }
+		.model-info { 
+			grid-column: 1 / 3;
+			grid-row: 1;
+			text-align: center;
+		}
+		.viewer-wrapper { 
+			grid-column: 1;
+			grid-row: 2;
+		}
+		.hit-info { 
+			grid-column: 2;
+			grid-row: 2;
+		}
+		.structure-hits { 
+			grid-column: 1 / 3;
+			grid-row: 3;
+		}
+		.sequence-hits { 
+			grid-column: 1 / 3;
+			grid-row: 4;
+		}
 
 		.grid-container {
 		  display: grid;
-		  grid-template-areas:
-		    'model-info model-info model-info model-info'
-		    'viewer viewer viewer hit-info'
-		    'structure-hits structure-hits structure-hits structure-hits'
-		    'sequence-hits sequence-hits sequence-hits sequence-hits';
+		  grid-template-columns: 1fr 1fr;
+		  grid-template-rows: 1fr 25vh 25vh 25vh;
 		  gap: 10px;
 		  background-color: #2196F3;
 		  padding: 10px;
@@ -88,12 +101,14 @@ function getAF2Link($name, $text=FALSE) {
 
 <div class="grid-container" style="width:80vw; margin-left: auto; margin-right: auto;">
 <div class="model-info">
+	<div style="display: inline-block; text-align: left">
 <?php
 	print("<h2>AlphaFold entry ".$name."</h2>\n");
 	print(getAF2Link($name,"View $name on AlphaFold Protein Structure Database site<br>\n"));
 	print("<b>Description</b>: $description<br>\n");
 	print("<b>Global pLDDT</b>: ".(is_null($global_metric_value) ? "N/A" : $global_metric_value)."<br>\n");
 ?>
+</div>
 </div>
 
 	<div class="viewer-wrapper" style="position: relative; background-color: yellow">

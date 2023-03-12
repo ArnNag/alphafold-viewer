@@ -37,7 +37,10 @@ function getAF2Link($name, $text=FALSE) {
 		    overflow-y: scroll;
 		}
 
-		.model-info { grid-area: model-info; }
+		.model-info { 
+			grid-column: 1 / 2;
+			grid-row: 1;
+		}
 		.viewer-wrapper { grid-area: viewer; }
 		.hit-info { grid-area: hit-info; }
 		.structure-hits { grid-area: structure-hits; }
@@ -45,14 +48,12 @@ function getAF2Link($name, $text=FALSE) {
 
 		.grid-container {
 		  display: grid;
-		  grid-template-areas:
-		    'model-info model-info model-info model-info'
-		    'viewer viewer viewer hit-info'
-		    'structure-hits structure-hits structure-hits structure-hits'
-		    'sequence-hits sequence-hits sequence-hits sequence-hits';
+		  grid-template-columns: 1fr 1fr;
+		  grid-template-rows: 1fr 1fr 1fr 1fr;
 		  gap: 10px;
 		  background-color: #2196F3;
 		  padding: 10px;
+		  width: 80vw;
 		}
 	</style>
     </head>
@@ -169,8 +170,8 @@ function getAF2Link($name, $text=FALSE) {
 		?>
 
 
-	<div class="viewer-wrapper" style="position: relative; background-color: yellow;">
-	    <div id="viewer" style="height: 400px; width: 400px; background-color: black"></div>
+	<div class="viewer-wrapper" style="position: relative; width:30%; background-color: yellow;">
+	    <div id="viewer" style="background-color: red; width:30%"></div>
 		<script type="text/javascript">
 		    const ln_path = "<?php print($ln_path) ?>";
 		    const viewer = new rcsbMolstar.Viewer('viewer', {
