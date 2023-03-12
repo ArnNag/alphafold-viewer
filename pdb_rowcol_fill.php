@@ -63,7 +63,7 @@ function getAF2Link($name, $text=FALSE) {
 
 		.grid-container {
 		  display: grid;
-		  grid-template-columns: 50% 50%;
+		  grid-template-columns: 80% 20%;
 		  grid-template-rows: 1fr 40vh 25vh 25vh;
 		  /* gap: 10px; */
 		  background-color: #2196F3;
