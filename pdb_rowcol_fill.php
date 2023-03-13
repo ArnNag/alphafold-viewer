@@ -215,6 +215,8 @@ ORDER BY p_value;";
 		    0, 1, 0, 0, 
 		    0, 0, 1, 0,
 		    0, 40, 0, 1];
+	    var a;
+	    var b;
 
 	    function superposeDomain(idx) {
 		    const sid = sids[idx];
@@ -223,12 +225,13 @@ ORDER BY p_value;";
 		    viewer.clear()
 			    .then(() => viewer.loadStructureFromUrl(pdb_ln, 'pdb', false))
 			    .then(() => viewer.loadStructureFromUrl(ln_path, 'mmcif', false, { props: {  assemblyId: '1' }, matrix: rotMat}))
-			    .then(() => viewer.resetCamera(0));
+			    .then(() => viewer.resetCamera(0)).then(function () {a = viewer._plugin.managers.structure.hierarchy.state.hierarchy.structures});
 	    }
-
+	    b = viewer._plugin.managers.structure.hierarchy.state.hierarchy.structures;
 	    const rotMats = <?php print(json_encode($rot_mats)) ?>;
 	    const sids = <?php print(json_encode($struct_sids)) ?>;
 	    superposeDomain(0);
+	    /* viewer.createComponent({label: "test", targets: {modelId: "test", labelAsymId: "A", labelSeqRange: {beg: 20, end: 30}}, representationType: "cartoon"}) */
 		</script>
 
 	<div class="structure-hits">
@@ -251,7 +254,7 @@ ORDER BY p_value;";
 	<script>
 
 	  const structModelRes = <?php print(json_encode($struct_model_res)) ?>;
-	  const structDomainRes = <?php print(json_encode($hit_res)) ?>;
+	  const structDomainRes = <?php print(json_encode($struct_domain_res)) ?>;
 	  const structSids = <?php print(json_encode($struct_sids)) ?>;
 	  const structPVals = <?php print(json_encode($p_vals)) ?>;
 	  const structColors = structPVals.map(val => d3.interpolateViridis(Math.pow(10, val + 2)));
@@ -351,13 +354,16 @@ ORDER BY p_value;";
 	    let activePoints = seqChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
 	    let idx = activePoints[0]['index'];
 	    superposeDomain(idx);
+	    const hit_view = document.getElementById('Hit');
+	    hit_view.innerHTML = '<div> Hit: <a href="https://scop.berkeley.edu/sunid=' + sunids[idx] + '">' +  seq_ids[idx] + '</a> </div> <div> Query start: ' +  queryRes[idx][0]  + '</div> <div> Query end: ' + queryRes[idx][1] + '</div> <div> Hit start: ' + hit_res[idx][0] + '</div> <div> Hit end: ' + hit_res[idx][1] + '</div> <div> log10 E-value: ' + e_values[idx] + '</div> <div> Coverage of target sequence: ' + ((hit_res[idx][1] - hit_res[idx][0]) / seq2_lens[idx]) + ' </div>';
+
 	  }
 
 	  seqCanvas.onclick = function(evt) {
 	    const hit_view = document.getElementById('Hit');
 	    let activePoints = seqChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
 	    let idx = activePoints[0]['index'];
-	    hit_view.innerHTML = '<div> Hit: <a href="https://scop.berkeley.edu/sunid=' + sunids[idx] + '">' +  seq_ids[idx] + '</a> </div> <div> Query start: ' +  queryRes[idx][0]  + '</div> <div> Query end: ' + queryRes[idx][1] + '</div> <div> Hit start: ' + hit_res[idx][0] + '</div> <div> Hit end: ' + hit_res[idx][1] + '</div> <div> log10 E-value: ' + e_values[idx] + '</div> <div> Coverage of target sequence: ' + ((hit_res[idx][1] - hit_res[idx][0]) / seq2_lens[idx]) + ' </div>';
+	    hit_view.innerHTML = '<div> Hit: <a href="https://scop.berkeley.edu/sunid=' + 'fill in' + '">' +  structSids[idx] + '</a> </div> <div> Query start: ' +  structModelRes[idx][0]  + '</div> <div> Query end: ' + structModelRes[idx][1] + '</div> <div> Hit start: ' + structDomainRes[idx][0] + '</div> <div> Hit end: ' + structDomainRes[idx][1] + '</div> <div> log10 E-value: ' + structPVals[idx] + '</div> <div> Coverage of target sequence: ' + ((structDomainRes[idx][1] - structDomainRes[idx][0]) / 1) + ' </div>';
 
 	  }
 	</script>
