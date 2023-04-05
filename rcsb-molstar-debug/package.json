@@ -1,0 +1,71 @@
+{
+    "name": "@rcsb/rcsb-molstar",
+    "version": "2.6.0",
+    "description": "RCSB PDB apps and props based on Mol*.",
+    "homepage": "https://github.com/molstar/rcsb-molstar#readme",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/molstar/rcsb-molstar.git"
+    },
+    "bugs": {
+        "url": "https://github.com/molstar/rcsb-molstar/issues"
+    },
+    "scripts": {
+        "test": "npm run lint",
+        "lint": "eslint src/**/*.ts",
+        "build": "npm run build-tsc && npm run build-extra && npm run build-webpack",
+        "build-tsc": "tsc --incremental",
+        "build-extra": "cpx \"src/**/*.{scss,html,ico}\" build/src/",
+        "build-webpack": "webpack --mode production",
+        "watch": "concurrently -c \"green,gray,gray\" --names \"tsc,ext,wpc\" --kill-others \"npm:watch-tsc\" \"npm:watch-extra\" \"npm:watch-webpack\"",
+        "watch-tsc": "tsc --watch --incremental",
+        "watch-extra": "cpx \"src/**/*.{scss,html,ico}\" build/src/ --watch",
+        "watch-webpack": "webpack -w --mode development --stats minimal",
+        "serve": "http-server -p 1335",
+        "preversion": "npm run test",
+        "version": "npm run build",
+        "postversion": "git push && git push --tags"
+    },
+    "publishConfig": {
+        "registry": "https://registry.npmjs.org/"
+    },
+    "main": "build/src/index.js",
+    "files": [
+        "build/dist/",
+        "build/src/viewer/"
+    ],
+    "author": "RCSB PDB and Mol* Contributors",
+    "license": "MIT",
+    "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "^5.55.0",
+        "@typescript-eslint/parser": "^5.55.0",
+        "buffer": "^6.0.3",
+        "concurrently": "^7.6.0",
+        "cpx2": "^4.2.2",
+        "crypto-browserify": "^3.12.0",
+        "css-loader": "^6.7.3",
+        "eslint": "^8.36.0",
+        "extra-watch-webpack-plugin": "^1.0.3",
+        "file-loader": "^6.2.0",
+        "fs-extra": "^11.1.0",
+        "mini-css-extract-plugin": "^2.7.3",
+        "path-browserify": "^1.0.1",
+        "raw-loader": "^4.0.2",
+        "sass": "^1.59.3",
+        "sass-loader": "^13.2.0",
+        "stream-browserify": "^3.0.0",
+        "style-loader": "^3.3.2",
+        "typescript": "^4.9.5",
+        "webpack": "^5.76.2",
+        "webpack-cli": "^5.0.1"
+    },
+    "dependencies": {
+        "@types/react": "^18.0.28",
+        "@types/react-dom": "^18.0.11",
+        "molstar": "^3.31.4",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "rxjs": "^7.8.0",
+        "tslib": "^2.5.0"
+    }
+}

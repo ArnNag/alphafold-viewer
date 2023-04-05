@@ -66,7 +66,7 @@ function getAF2Link($name, $text=FALSE) {
 		  grid-template-columns: 80% 20%;
 		  grid-template-rows: 1fr 40vh 25vh 25vh;
 		  /* gap: 10px; */
-		  background-color: #2196F3;
+		  /* background-color: #2196F3; */
 		  /* padding: 10px; */
 		}
 
@@ -216,7 +216,6 @@ ORDER BY p_value;";
 		    0, 0, 1, 0,
 		    0, 40, 0, 1];
 	    var a;
-	    var b;
 
 	    function superposeDomain(idx) {
 		    const sid = sids[idx];
@@ -225,9 +224,10 @@ ORDER BY p_value;";
 		    viewer.clear()
 			    .then(() => viewer.loadStructureFromUrl(pdb_ln, 'pdb', false))
 			    .then(() => viewer.loadStructureFromUrl(ln_path, 'mmcif', false, { props: {  assemblyId: '1' }, matrix: rotMat}))
-			    .then(() => viewer.resetCamera(0)).then(function () {a = viewer._plugin.managers.structure.hierarchy.state.hierarchy.structures});
+			    .then(() => viewer.resetCamera(0)).then(function () {a = viewer._plugin.managers.structure.hierarchy.state.hierarchy.structures[0].cell.obj.data.units[0].model.id;
+			    viewer.createComponent({label: "test", targets: {modelId: a, labelAsymId: "A", labelSeqRange: {beg: 20, end: 30}}, representationType: "cartoon"})});
 	    }
-	    b = viewer._plugin.managers.structure.hierarchy.state.hierarchy.structures;
+
 	    const rotMats = <?php print(json_encode($rot_mats)) ?>;
 	    const sids = <?php print(json_encode($struct_sids)) ?>;
 	    superposeDomain(0);
@@ -350,7 +350,7 @@ ORDER BY p_value;";
 	  const seqCanvas = document.getElementById('seq-hits');
 	  const seqChart = new Chart(seqCanvas, seqConfig);
 
-	  structCanvas.onclick = function(evt) {
+	  seqCanvas.onclick = function(evt) {
 	    let activePoints = seqChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
 	    let idx = activePoints[0]['index'];
 	    superposeDomain(idx);
@@ -359,7 +359,7 @@ ORDER BY p_value;";
 
 	  }
 
-	  seqCanvas.onclick = function(evt) {
+	  structCanvas.onclick = function(evt) {
 	    const hit_view = document.getElementById('Hit');
 	    let activePoints = seqChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
 	    let idx = activePoints[0]['index'];
