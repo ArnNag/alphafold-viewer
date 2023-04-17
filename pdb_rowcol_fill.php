@@ -156,26 +156,29 @@ ORDER BY blast_log10_e;
 	/* print(json_encode($seq_ids)); */
 	/* print(json_encode($e_values)); */
 	/* print(json_encode($colors)); */
-	$structure_query = "SELECT astral_domain.sid, scop_node.sunid, model_start, model_end, domain_start, domain_end, p_value, translate_x, translate_y, translate_z, rotate_1_1, rotate_1_2, rotate_1_3, rotate_2_1, rotate_2_2, rotate_2_3, rotate_3_1, rotate_3_2, rotate_3_3
+	$structure_query = "SELECT astral_domain.sid, scop_node.sunid, model_start, model_end, domain_start, domain_end, z_score, translate_x, translate_y, translate_z, rotate_1_1, rotate_1_2, rotate_1_3, rotate_2_1, rotate_2_2, rotate_2_3, rotate_3_1, rotate_3_2, rotate_3_3
 		FROM model_structure
 JOIN model_vs_domain_structure_alignment AS m_vs_d ON model_structure.id = m_vs_d.model_id
 JOIN astral_domain ON m_vs_d.domain_id = astral_domain.id
 JOIN scop_node ON astral_domain.node_id = scop_node.id
 WHERE model_structure.cif_path = \"".$path."\"
-ORDER BY p_value;";
+AND structure_aligner_id = 2
+ORDER BY z_score DESC LIMIT 50;";
 	$structure_result = mysqli_query($mysqlLink, $structure_query);
 	$structure_n = mysqli_num_rows($structure_result);
 	$struct_sids=[];
+	$struct_sunids=[];
 	$rot_mats=[];
-	$p_vals=[];
+	$z_scores=[];
 	$struct_model_res=[];
 	$struct_domain_res=[];
 
 	for ($x = 0; $x < $structure_n; $x++) {
 		$row = mysqli_fetch_assoc($structure_result);
 		$struct_sids[] = $row['sid'];
+		$struct_sunids[] = $row['sunid'];
 		$rot_mats[] = [floatval($row['rotate_1_1']), floatval($row['rotate_1_2']), floatval($row['rotate_1_3']),  0, floatval($row['rotate_2_1']), floatval($row['rotate_2_2']), floatval($row['rotate_2_3']), 0, floatval($row['rotate_3_1']), floatval($row['rotate_3_2']), floatval($row['rotate_3_3']), 0, floatval($row['translate_x']), floatval($row['translate_y']), floatval($row['translate_z']), 1];
-		$p_vals[] = floatval($row['p_value']);
+		$z_scores[] = floatval($row['z_score']);
 		$struct_domain_res[] = [intval($row["domain_start"]), intval($row["domain_end"])];
 		$struct_model_res[] = [intval($row["model_start"]), intval($row["model_end"])];
 	} 
@@ -188,8 +191,14 @@ ORDER BY p_value;";
 	    <div id="viewer" style="height: 400px"></div>
 	</div>
 
-	<div class="hit-info" style="background-color: #90EE90">
+	<div class="hit-info">
 		<div id="Hit"></div>
+		<button id="model-full" type="button">Full model</button> 
+		<button id="model-hit" type="button">Hit in model</button> 
+		<button id="model-none" type="button">Hide model</button> 
+		<button id="domain-full" type="button">Full domain</button> 
+		<button id="domain-hit" type="button">Hit in domain</button> 
+		<button id="domain-none" type="button">Hide domain</button> 
 	</div>
 
 	<script type="text/javascript">
@@ -224,9 +233,33 @@ ORDER BY p_value;";
 		    viewer.clear()
 			    .then(() => viewer.loadStructureFromUrl(pdb_ln, 'pdb', false))
 			    .then(() => viewer.loadStructureFromUrl(ln_path, 'mmcif', false, { props: {  assemblyId: '1' }, matrix: rotMat}))
-			    .then(() => viewer.resetCamera(0)).then(function () {a = viewer._plugin.managers.structure.hierarchy.state.hierarchy.structures[0].cell.obj.data.units[0].model.id;
-			    viewer.createComponent({label: "test", targets: {modelId: a, labelAsymId: "A", labelSeqRange: {beg: 20, end: 30}}, representationType: "cartoon"})});
+			    .then(() => viewer.makeHiddenComponent(0, 10, 20))
+			    .then(() => viewer.makeHiddenComponent(1, 10, 20))
+			    .then(() => viewer.resetCamera(0));
 	    }
+
+	    // componentIdx 0 is full structure, componentIdx 1 is selection
+	    // region is "hit" , "full" , or "none"
+	    // the boolean is isHidden
+	    function showRegion(structureIdx, region) {
+		switch (region) {
+		    case "hit": {
+			viewer.setSubtreeVisibility(structureIdx, 0, true); // hide full structure
+		        viewer.setSubtreeVisibility(structureIdx, 1, false); // show selection
+		    }
+		    case "full": {
+		        viewer.setSubtreeVisibility(structureIdx, 0, false); // show full structure
+		        viewer.setSubtreeVisibility(structureIdx, 1, true); // hide selection
+		    }
+		    case "none": {
+		        viewer.setSubtreeVisibility(structureIdx, 0, true); // hide full structure
+		        viewer.setSubtreeVisibility(structureIdx, 1, true); // hide selection
+		    }
+	        }
+			            
+	    }
+
+
 
 	    const rotMats = <?php print(json_encode($rot_mats)) ?>;
 	    const sids = <?php print(json_encode($struct_sids)) ?>;
@@ -256,8 +289,9 @@ ORDER BY p_value;";
 	  const structModelRes = <?php print(json_encode($struct_model_res)) ?>;
 	  const structDomainRes = <?php print(json_encode($struct_domain_res)) ?>;
 	  const structSids = <?php print(json_encode($struct_sids)) ?>;
-	  const structPVals = <?php print(json_encode($p_vals)) ?>;
-	  const structColors = structPVals.map(val => d3.interpolateViridis(Math.pow(10, val + 2)));
+	  const structZScores = <?php print(json_encode($z_scores)) ?>;
+	  const structColors = structZScores.map(val => d3.interpolateViridis(Math.pow(10, val + 2)));
+	  const structSunids = <?php print(json_encode($struct_sunids)) ?>;
 
 	  const queryRes = <?php print(json_encode($query_res)) ?>;
 	  const hit_res = <?php print(json_encode($hit_res)) ?>;
@@ -289,8 +323,12 @@ ORDER BY p_value;";
 		  callbacks: {
 		    afterBody: function(tooltipItem) {
 		      let idx = tooltipItem[0]['dataIndex'];
-		      msg = 'Query start: ' +  queryRes[idx][0]  + '\nQuery end: ' + queryRes[idx][1] +  '\nHit start: ' + hit_res[idx][0] + '\nHit end: ' + hit_res[idx][1] + '\n';
-		      msg += "Log10 E_value: " + Math.round(structPVals[tooltipItem[0]['dataIndex']] * 100) / 100;
+		      let queryStart = queryRes[idx][0];
+		      let queryEnd = queryRes[idx][1];
+		      let hitStart = hit_res[idx][0];
+		      let hitEnd = hit_res[idx][1];
+		      let zScore = Math.round(structZScores[tooltipItem[0]['dataIndex']] * 100) / 100;
+		      msg = `Query start: ${queryStart} \nQuery end: ${queryEnd} \nHit start: ${hitStart} \nHit end: ${hitEnd} \nz-score: ${zScore}`;
 		      return msg;
 		    }
 		  }
@@ -353,9 +391,38 @@ ORDER BY p_value;";
 	  seqCanvas.onclick = function(evt) {
 	    let activePoints = seqChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
 	    let idx = activePoints[0]['index'];
-	    superposeDomain(idx);
 	    const hit_view = document.getElementById('Hit');
-	    hit_view.innerHTML = '<div> Hit: <a href="https://scop.berkeley.edu/sunid=' + sunids[idx] + '">' +  seq_ids[idx] + '</a> </div> <div> Query start: ' +  queryRes[idx][0]  + '</div> <div> Query end: ' + queryRes[idx][1] + '</div> <div> Hit start: ' + hit_res[idx][0] + '</div> <div> Hit end: ' + hit_res[idx][1] + '</div> <div> log10 E-value: ' + e_values[idx] + '</div> <div> Coverage of target sequence: ' + ((hit_res[idx][1] - hit_res[idx][0]) / seq2_lens[idx]) + ' </div>';
+	    let sunid = sunids[idx];
+	    let sid = seq_ids[idx];
+	    let queryStart = queryRes[idx][0];
+	    let queryEnd = queryRes[idx][1];
+	    let hitStart = hit_res[idx][0];
+	    let hitEnd = hit_res[idx][1];
+	    let log10EVal = e_values[idx];
+	    hit_view.innerHTML = `
+<table>
+  <tr>
+    <th style="background-image: linear-gradient(to bottom, #dff0d8 0, #d0e9c6 100%); padding: 8px">Hit: <a href="https://scop.berkeley.edu/sunid=${sunid}"> ${sid}</a></th>
+  </tr>
+  <tr>
+    <td style="background-color:#f7f7f7; padding: 4px">Query start: ${queryStart}</td>
+  </tr>
+  <tr>
+    <td style="background-color:#f7f7f7; padding: 4px">Query end: ${queryEnd}</td>
+  </tr>
+    <tr>
+    <td style="background-color:#f7f7f7; padding: 4px">Hit start: ${hitStart}</td>
+  </tr>
+    <tr>
+    <td style="background-color:#f7f7f7; padding: 4px">Hit end: ${hitEnd}</td>
+  </tr>
+    <tr>
+    <td style="background-color:#f7f7f7; padding: 4px">log10 E-value: ${log10EVal}</td>
+  </tr>
+    <tr>
+    <td style="background-color:#f7f7f7; padding: 4px">Coverage of target sequence: TODO</td>
+  </tr>
+</table>`;
 
 	  }
 
@@ -363,8 +430,78 @@ ORDER BY p_value;";
 	    const hit_view = document.getElementById('Hit');
 	    let activePoints = seqChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
 	    let idx = activePoints[0]['index'];
-	    hit_view.innerHTML = '<div> Hit: <a href="https://scop.berkeley.edu/sunid=' + 'fill in' + '">' +  structSids[idx] + '</a> </div> <div> Query start: ' +  structModelRes[idx][0]  + '</div> <div> Query end: ' + structModelRes[idx][1] + '</div> <div> Hit start: ' + structDomainRes[idx][0] + '</div> <div> Hit end: ' + structDomainRes[idx][1] + '</div> <div> log10 E-value: ' + structPVals[idx] + '</div> <div> Coverage of target sequence: ' + ((structDomainRes[idx][1] - structDomainRes[idx][0]) / 1) + ' </div>';
+	    superposeDomain(idx);
+	    let structSunid = structSunids[idx];
+	    let structSid = structSids[idx];
+	    let queryStart = structModelRes[idx][0];
+	    let queryEnd = structModelRes[idx][1];
+	    let hitStart = structDomainRes[idx][0];
+	    let hitEnd = structDomainRes[idx][1];
+	    let zScore = structZScores[idx];
+	    hit_view.innerHTML = 
+`<table>
+  <tr>
+    <th style="background-image: linear-gradient(to bottom, #dff0d8 0, #d0e9c6 100%); padding: 8px">Domain: <a href="https://scop.berkeley.edu/sunid=${structSunid}"> ${structSid}</a></th>
+  </tr>
+  <tr>
+    <td style="background-color:#f7f7f7; padding: 4px">Query start: ${queryStart}</td>
+  </tr>
+  <tr>
+    <td style="background-color:#f7f7f7; padding: 4px">Query end: ${queryEnd}</td>
+  </tr>
+    <tr>
+    <td style="background-color:#f7f7f7; padding: 4px">Hit start: ${hitStart}</td>
+  </tr>
+    <tr>
+    <td style="background-color:#f7f7f7; padding: 4px">Hit end: ${hitEnd}</td>
+  </tr>
+    <tr>
+    <td style="background-color:#f7f7f7; padding: 4px">z-score: ${zScore}</td>
+  </tr>
+    <tr>
+    <td style="background-color:#f7f7f7; padding: 4px">Coverage of target sequence: TODO</td>
+  </tr>
+</table>`;
+	  }
 
+
+	  const modelFull = document.getElementById('model-full');
+	  modelFull.onclick = function(evt) {
+		viewer.setSubtreeVisibility(1, 0, false); // show full structure
+		viewer.setSubtreeVisibility(1, 1, true); // hide selection
+	  }
+
+	  
+	  const modelHit = document.getElementById('model-hit');
+	  modelHit.onclick = function(evt) {
+		viewer.setSubtreeVisibility(1, 0, true); // hide full structure
+		viewer.setSubtreeVisibility(1, 1, false); // show selection
+	  }
+
+	  
+	  const modelNone = document.getElementById('model-none');
+	  modelNone.onclick = function(evt) {
+		viewer.setSubtreeVisibility(1, 0, true); // hide full structure
+		viewer.setSubtreeVisibility(1, 1, true); // hide selection
+	  }
+
+	  const domainFull = document.getElementById('domain-full');
+	  domainFull.onclick = function(evt) {
+		viewer.setSubtreeVisibility(0, 0, false); // show full structure
+		viewer.setSubtreeVisibility(0, 1, true); // hide selection
+	  }
+
+	  
+	  const domainHit = document.getElementById('domain-hit');
+	  domainHit.onclick = function(evt) {
+		viewer.setSubtreeVisibility(0, 0, true); // hide full structure
+		viewer.setSubtreeVisibility(0, 1, false); // show selection
+	  }
+
+	  const domainNone = document.getElementById('domain-none');
+	  domainNone.onclick = function(evt) {
+		viewer.setSubtreeVisibility(0, 0, true); // hide full structure
+		viewer.setSubtreeVisibility(0, 1, true); // hide selection
 	  }
 	</script>
 	</div>
