@@ -22,6 +22,16 @@ function getAF2Link($name, $text=FALSE) {
 	<script type="text/javascript" src="rcsb_molstar/rcsb-molstar/build/dist/viewer/rcsb-molstar.js"></script>
 	<link rel="stylesheet" type="text/css" href="rcsb-molstar/build/dist/viewer/rcsb-molstar.css" />
 	<style>
+		/* .chartWrapper { */
+		/*   position: relative; */
+		/* } */
+
+		/* .chartWrapper > canvas { */
+		/*   position: absolute; */
+		/*   left: 0; */
+		/*   top: 0; */
+		/*   pointer-events: none; */
+		/* } */
 
 		.chartAreaWrapper {
 		  height: 25vh;
@@ -55,6 +65,9 @@ function getAF2Link($name, $text=FALSE) {
 		  display: grid;
 		  grid-template-columns: 80% 20%;
 		  grid-template-rows: 1fr 40vh 25vh 25vh;
+		  /* gap: 10px; */
+		  /* background-color: #2196F3; */
+		  /* padding: 10px; */
 		}
 
 	</style>
@@ -78,12 +91,10 @@ function getAF2Link($name, $text=FALSE) {
 	</script>
 	<?php
 
-	// get model info
+	// get basic info
 
 	$path = "/mnt/net/ipa.jmcnet/data/h/anagle/af2_human_v3/".$name."-model_v3.cif.gz";
 	$ln_path = "rcsb_molstar/".$name."-model_v3.cif";
-
-	// TODO: This command uses awk to directly read columns from the cif file. It works and is fast, but it might break. Once everything is converted to XML, it's better to use XML parsing utilities to extract this information.
 	$awk_input = "zcat ".$path." | awk '$1 == \"_entity.pdbx_description\" || $1 == \"_ma_qa_metric_global.metric_value\" {\$1=\"\\x22\"$1\"\\x22:\"; print $0 \",\"'}";
 	$af2_data = "{".substr(shell_exec($awk_input), 0, -2)."}";
 	$decoded_af2_data = json_decode($af2_data);
@@ -103,8 +114,7 @@ function getAF2Link($name, $text=FALSE) {
 	</div>
 	</div>
 <?php 
-		// Querying for sequence hits and putting the relevant hit information in JSON
-		$seq_hit_query = "SELECT astral_domain.header, astral_domain.sid, blast_log10_e, pct_identical, seq1_start, seq1_length, seq2_start, seq2_length, scop_node.sunid
+		$query = "SELECT astral_domain.header, astral_domain.sid, blast_log10_e, pct_identical, seq1_start, seq1_length, seq2_start, seq2_length, scop_node.sunid
 FROM model_structure JOIN model_structure_uniprot ON model_structure.id = model_structure_uniprot.model_structure_id
 JOIN uniprot_seq ON model_structure_uniprot.uniprot_id = uniprot_seq.uniprot_id
 JOIN astral_seq_blast ON uniprot_seq.seq_id = astral_seq_blast.seq1_id
@@ -116,33 +126,36 @@ AND blast_log10_e < 0
 GROUP BY seq2_id
 ORDER BY blast_log10_e;
 ";
-	$seq_result = mysqli_query($mysqlLink, $seq_hit_query);
+	$result = mysqli_query($mysqlLink, $query);
 	$n = mysqli_num_rows($result);
-	$seq_model_res=[];
-	$seq_domain_res=[];
-	$seq_sids=[];
+	$query_res=[];
+	$hit_res=[];
+	$seq_ids=[];
 	$seq2_lens=[];
 	$e_values=[];
-	$seq_sunids=[];
+	$colors=[];
+	$sunids=[];
+	$e_value_cutoff = -3;
 	for ($x = 0; $x < $n; $x++) {
-		$row = mysqli_fetch_assoc($seq_result);
-		$seq_sids[] = $row['sid'];
+		$row = mysqli_fetch_assoc($result);
+		$seq_ids[] = $row['sid'];
 		$e_values[] = floatval($row["blast_log10_e"]);
-		// TODO: seq1_length and seq2_length include gaps. Therefore, the following way of calculating where the hit ends is wrong. Need to use the astral_seq_blast_gap table to account for gaps.
+		if ($row["blast_log10_e"] < $e_value_cutoff) {
+			$colors[] = "green";
+		} else {
+			$colors[]= "blue";
+		}
 		$seq1_end = $row["seq1_start"] + $row["seq1_length"];
-		$seq_model_res[] = [intval($row["seq1_start"]), $seq1_end];
+		$query_res[] = [intval($row["seq1_start"]), $seq1_end];
 		$seq2_end = $row["seq2_start"] + $row["seq2_length"];
-		$seq_domain_res[] = [intval($row["seq2_start"]), $seq2_end];
-		$seq_sunids[] = $row["sunid"];
+		$hit_res[] = [intval($row["seq2_start"]), $seq2_end];
+		$sunids[] = $row["sunid"];
 		$seq2_lens[] = $row["seq2_length"];
 	} 
 	/* print(json_encode($resdata)); */
-	/* print(json_encode($seq_sids)); */
+	/* print(json_encode($seq_ids)); */
 	/* print(json_encode($e_values)); */
 	/* print(json_encode($colors)); */
-	
-
-	// Querying for structure hits and putting the relevant hit information in JSON
 	$structure_query = "SELECT astral_domain.sid, scop_node.sunid, model_start, model_end, domain_start_ATOM, domain_end_ATOM, z_score, translate_x, translate_y, translate_z, rotate_1_1, rotate_1_2, rotate_1_3, rotate_2_1, rotate_2_2, rotate_2_3, rotate_3_1, rotate_3_2, rotate_3_3
 		FROM model_structure
 JOIN model_vs_domain_structure_alignment AS m_vs_d ON model_structure.id = m_vs_d.model_id
@@ -169,17 +182,17 @@ ORDER BY z_score DESC LIMIT 50;";
 		$struct_domain_res[] = [intval($row["domain_start_ATOM"]), intval($row["domain_end_ATOM"])];
 		$struct_model_res[] = [intval($row["model_start"]), intval($row["model_end"])];
 	} 
-
+	/* console_log(json_encode($rot_mats[0])); */
 	$pxperhit = 25;
 	?>
 
 
-	<div class="viewer-wrapper" style="position: relative; background-color: white">
+	<div class="viewer-wrapper" style="position: relative; background-color: yellow">
 	    <div id="viewer" style="height: 400px"></div>
 	</div>
 
 	<div class="hit-info">
-		<div id="hit-panel"></div>
+		<div id="Hit"></div>
 		<button id="model-full" type="button">Full model</button> 
 		<button id="model-hit" type="button">Hit in model</button> 
 		<button id="model-none" type="button">Hide model</button> 
@@ -215,9 +228,8 @@ ORDER BY z_score DESC LIMIT 50;";
 		    viewer.clear()
 			    .then(() => viewer.loadStructureFromUrl(domainLn, 'pdb', false))
 			    .then(() => viewer.loadStructureFromUrl(ln_path, 'mmcif', false, { props: {  assemblyId: '1' }, matrix: rotMat}))
-			    .then(() => viewer.makeHiddenComponent(0, 20, 50)) // domain
+			    .then(() => viewer.makeHiddenComponent(0, 15, 17)) // domain
 			    .then(() => viewer.makeHiddenComponent(1, structModelRes[idx][0], structModelRes[idx][1])) // model
-			    /* .then(() => viewer.makeHiddenComponent(1, 0, 177)) // model */
 			    .then(() => viewer.resetCamera(0));
 	    }
 
@@ -249,11 +261,11 @@ ORDER BY z_score DESC LIMIT 50;";
 	  const structColors = structZScores.map(val => d3.interpolateViridis(Math.pow(10, val + 2)));
 	  const structSunids = <?php print(json_encode($struct_sunids)) ?>;
 
-	  const seqModelRes = <?php print(json_encode($seq_model_res)) ?>;
-	  const seqDomainRes = <?php print(json_encode($seq_domain_res)) ?>;
-	  const seqSids = <?php print(json_encode($seq_sids)) ?>;
+	  const queryRes = <?php print(json_encode($query_res)) ?>;
+	  const hit_res = <?php print(json_encode($hit_res)) ?>;
+	  const seq_ids = <?php print(json_encode($seq_ids)) ?>;
 	  const e_values = <?php print(json_encode($e_values)) ?>;
-	  const seqSunids = <?php print(json_encode($seq_sunids)) ?>;
+	  const sunids = <?php print(json_encode($sunids)) ?>;
 	  const seq2_lens = <?php print(json_encode($seq2_lens)) ?>;
 	  const colors = e_values.map(val => d3.interpolateViridis(Math.pow(10, val + 2)));
 
@@ -279,12 +291,12 @@ ORDER BY z_score DESC LIMIT 50;";
 		  callbacks: {
 		    afterBody: function(tooltipItem) {
 		      let idx = tooltipItem[0]['dataIndex'];
-		      let modelStart = structModelRes[idx][0];
-		      let modelEnd = structModelRes[idx][1];
-		      let domainStart = seqDomainRes[idx][0];
-		      let domainEnd = seqDomainRes[idx][1];
+		      let queryStart = queryRes[idx][0];
+		      let queryEnd = queryRes[idx][1];
+		      let hitStart = hit_res[idx][0];
+		      let hitEnd = hit_res[idx][1];
 		      let zScore = Math.round(structZScores[tooltipItem[0]['dataIndex']] * 100) / 100;
-		      msg = `Model hit start: ${modelStart} \nModel hit end: ${modelEnd} \nDomain hit start: ${domainStart} \nDomain hit end: ${domainEnd} \nz-score: ${zScore}`;
+		      msg = `Model hit start: ${queryStart} \nModel hit end: ${queryEnd} \nDomain hit start: ${hitStart} \nDomain hit end: ${hitEnd} \nz-score: ${zScore}`;
 		      return msg;
 		    }
 		  }
@@ -303,12 +315,12 @@ ORDER BY z_score DESC LIMIT 50;";
 	  const structChart = new Chart(structCanvas, structConfig);
 
 	  const seqData = {
-	  labels: seqSids,
+	  labels: seq_ids,
 	    datasets: [{
 	      label: 'Sequence hits',
 	      backgroundColor: colors, 
 	      borderColor: 'rgb(255, 99, 132)',
-	      data: seqModelRes
+	      data: queryRes
 	    }]
 	  };
 
@@ -324,7 +336,7 @@ ORDER BY z_score DESC LIMIT 50;";
 		  callbacks: {
 		    afterBody: function(tooltipItem) {
 		      let idx = tooltipItem[0]['dataIndex'];
-		      msg = 'Model hit start: ' +  seqModelRes[idx][0]  + '\nModel hit end: ' + seqModelRes[idx][1] +  '\nDomain hit start: ' + seqDomainRes[idx][0] + '\nDomain hit end: ' + seqDomainRes[idx][1] + '\n';
+		      msg = 'Model hit start: ' +  queryRes[idx][0]  + '\nModel hit end: ' + queryRes[idx][1] +  '\nDomain hit start (index into domain ATOM records): ' + hit_res[idx][0] + '\nDomain hit end (index into domain ATOM records): ' + hit_res[idx][1] + '\n';
 		      msg += "Log10 E_value: " + Math.round(e_values[tooltipItem[0]['dataIndex']] * 100) / 100;
 		      return msg;
 		    }
@@ -347,13 +359,13 @@ ORDER BY z_score DESC LIMIT 50;";
 	  seqCanvas.onclick = function(evt) {
 	    let activePoints = seqChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
 	    let idx = activePoints[0]['index'];
-	    const hit_view = document.getElementById('hit-panel');
-	    let sunid = seqSunids[idx];
-	    let sid = seqSids[idx];
-	    let modelStart = seqModelRes[idx][0];
-	    let modelEnd = seqModelRes[idx][1];
-	    let domainStart = seqDomainRes[idx][0];
-	    let domainEnd = seqDomainRes[idx][1];
+	    const hit_view = document.getElementById('Hit');
+	    let sunid = sunids[idx];
+	    let sid = seq_ids[idx];
+	    let queryStart = queryRes[idx][0];
+	    let queryEnd = queryRes[idx][1];
+	    let hitStart = hit_res[idx][0];
+	    let hitEnd = hit_res[idx][1];
 	    let log10EVal = e_values[idx];
 	    hit_view.innerHTML = `
 <table>
@@ -361,16 +373,16 @@ ORDER BY z_score DESC LIMIT 50;";
     <th style="background-image: linear-gradient(to bottom, #dff0d8 0, #d0e9c6 100%); padding: 8px">Hit: <a href="https://scop.berkeley.edu/sunid=${sunid}"> ${sid}</a></th>
   </tr>
   <tr>
-    <td style="background-color:#f7f7f7; padding: 4px">Model hit start: ${modelStart}</td>
+    <td style="background-color:#f7f7f7; padding: 4px">Model hit start: ${queryStart}</td>
   </tr>
   <tr>
-    <td style="background-color:#f7f7f7; padding: 4px">Model hit end: ${modelEnd}</td>
+    <td style="background-color:#f7f7f7; padding: 4px">Model hit end: ${queryEnd}</td>
   </tr>
     <tr>
-    <td style="background-color:#f7f7f7; padding: 4px">Domain hit start: ${domainStart}</td>
+    <td style="background-color:#f7f7f7; padding: 4px">Domain hit start: ${hitStart}</td>
   </tr>
     <tr>
-    <td style="background-color:#f7f7f7; padding: 4px">Domain hit end: ${domainEnd}</td>
+    <td style="background-color:#f7f7f7; padding: 4px">Domain hit end: ${hitEnd}</td>
   </tr>
     <tr>
     <td style="background-color:#f7f7f7; padding: 4px">log10 E-value: ${log10EVal}</td>
@@ -389,10 +401,10 @@ ORDER BY z_score DESC LIMIT 50;";
 	    superposeDomain(idx);
 	    let structSunid = structSunids[idx];
 	    let structSid = structSids[idx];
-	    let modelStart = structModelRes[idx][0];
-	    let modelEnd = structModelRes[idx][1];
-	    let domainStart = structDomainRes[idx][0];
-	    let domainEnd = structDomainRes[idx][1];
+	    let queryStart = structModelRes[idx][0];
+	    let queryEnd = structModelRes[idx][1];
+	    let hitStart = structDomainRes[idx][0];
+	    let hitEnd = structDomainRes[idx][1];
 	    let zScore = structZScores[idx];
 	    hit_view.innerHTML = 
 `<table>
@@ -400,16 +412,16 @@ ORDER BY z_score DESC LIMIT 50;";
     <th style="background-image: linear-gradient(to bottom, #dff0d8 0, #d0e9c6 100%); padding: 8px">Domain: <a href="https://scop.berkeley.edu/sunid=${structSunid}"> ${structSid}</a></th>
   </tr>
   <tr>
-    <td style="background-color:#f7f7f7; padding: 4px">Model hit start: ${modelStart}</td>
+    <td style="background-color:#f7f7f7; padding: 4px">Model hit start: ${queryStart}</td>
   </tr>
   <tr>
-    <td style="background-color:#f7f7f7; padding: 4px">Model hit end: ${modelEnd}</td>
+    <td style="background-color:#f7f7f7; padding: 4px">Model hit end: ${queryEnd}</td>
   </tr>
     <tr>
-    <td style="background-color:#f7f7f7; padding: 4px">Domain hit start: ${domainStart}</td>
+    <td style="background-color:#f7f7f7; padding: 4px">Domain hit start: ${hitStart}</td>
   </tr>
     <tr>
-    <td style="background-color:#f7f7f7; padding: 4px">Domain hit end: ${domainEnd}</td>
+    <td style="background-color:#f7f7f7; padding: 4px">Domain hit end: ${hitEnd}</td>
   </tr>
     <tr>
     <td style="background-color:#f7f7f7; padding: 4px">z-score: ${zScore}</td>
