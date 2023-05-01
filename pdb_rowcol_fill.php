@@ -117,7 +117,7 @@ GROUP BY seq2_id
 ORDER BY blast_log10_e;
 ";
 	$seq_result = mysqli_query($mysqlLink, $seq_hit_query);
-	$n = mysqli_num_rows($result);
+	$n = mysqli_num_rows($seq_result);
 	$seq_model_res=[];
 	$seq_domain_res=[];
 	$seq_sids=[];
