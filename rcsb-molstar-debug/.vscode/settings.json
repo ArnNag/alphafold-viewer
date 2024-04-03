@@ -1,9 +1,0 @@
-{
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "files.associations": {
-        "*.glsl.ts": "glsl",
-        "*.frag.ts": "glsl",
-        "*.vert.ts": "glsl",
-        "*.gql.ts": "graphql"
-    }
-}
